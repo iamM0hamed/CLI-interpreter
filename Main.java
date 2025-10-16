@@ -11,36 +11,36 @@ class Parser {
 	public boolean parse(String input) {
 		try {
 			input = input.trim();
-			for (int i = 0; i < input.length(); i++) {
-				// note == compare references => to compare values use .equals
-				if (input.equalsIgnoreCase("pwd") || input.equalsIgnoreCase("ls") ||
-					input.equalsIgnoreCase("cd")) {
-					commandName = input;
-					args = new String[0];
+
+			// Handle single commands without arguments
+			if (input.equalsIgnoreCase("pwd") || input.equalsIgnoreCase("ls")) {
+				commandName = input.toLowerCase();
+				args = new String[0];
+				return true;
+			}
+
+			// Handle cd without arguments (go to home)
+			if (input.equalsIgnoreCase("cd")) {
+				commandName = "cd";
+				args = new String[0];
+				return true;
+			}
+
+			// Handle commands with arguments
+			String[] parts = input.split("\\s+", 2);
+			if (parts.length >= 1) {
+				String cmd = parts[0].toLowerCase();
+				if (CommandList.COMMANDS.contains(cmd)) {
+					commandName = cmd;
+					if (parts.length == 2) {
+						args = parts[1].trim().split("\\s+");
+					} else {
+						args = new String[0];
+					}
 					return true;
 				}
-				// check if the current space is bad command or saperate the command and
-				// the args
-				if (input.charAt(i) == ' ' && commandName.length() != 0) {
-					// bad command
-					if (!CommandList.COMMANDS.contains(commandName.toLowerCase())) {
-						throw new Exception("wrong command or bad parameters!!");
-					}
-					// the space is a separator between the command and the args
-					else {
-						StringBuilder arguments = new StringBuilder();
-						// set the args
-						for (int j = i + 1; j < input.length(); j++) {
-							arguments.append(input.charAt(j));
-						}
-						String[] parts = arguments.toString().trim().split("\\s+");
-						args = parts;
-						return true;
-					}
-				}
-				// commandName.append(input.charAt(i));
-				commandName += input.charAt(i);
 			}
+
 		} catch (Exception e) {
 			System.out.println(e.getMessage());
 		}
@@ -48,9 +48,11 @@ class Parser {
 		args = new String[0];
 		return false;
 	}
+
 	public String getCommandName() {
 		return commandName;
 	}
+
 	public String[] getArgs() {
 		return args;
 	}
@@ -62,29 +64,38 @@ class CommandList {
 }
 
 class Terminal {
-	static Parser parser = new Parser();
-	//-------------------Implement The All commands in a methods, for
-	// example:-------------------
+	// Implement The All commands in a methods
+	private Parser parser;
+
+	public Terminal(Parser parser) {
+		this.parser = parser;
+	}
+
 	public String pwd() {
 		// just for testing
 		return "pwd has been done";
 	}
+
 	public void cd(String[] args) {
 		// just for testing
 		System.out.println("cd has been done");
-		if (args.equals(null)) {
+		if (args == null || args.length == 0) {
 			System.out.println("There is no arguments");
 			return;
 		}
-		System.out.println("The arguments are: ");
+		System.out.print("The arguments are: ");
 		for (int i = 0; i < args.length; i++) {
 			System.out.println(args[i]);
 		}
 	}
-	// ...
+
+	public void mkdir(String[] args) {
+		System.out.println("this is mkdir");
+	}
+
 	// This method will choose the suitable command method to be called
 	public void chooseCommandAction() {
-		if (!parser.equals(null)) {
+		if (parser != null) {
 			switch (parser.getCommandName().toLowerCase()) {
 				case "pwd":
 					System.out.println(pwd());
@@ -94,15 +105,15 @@ class Terminal {
 					cd(parser.getArgs());
 					break;
 
-					// Mohamed
-					// case "ls":
-					//     ls();
-					//     break;
+				// Mohamed
+				// case "ls":
+				//     ls();
+				//     break;
 
-					// AbuHamed
-					// case "mkdir":
-					//     mkdir(parser.getArgs());
-					//     break;
+				// AbuHamed
+				case "mkdir":
+					mkdir(parser.getArgs());
+					break;
 
 					// AbuHamed
 					// case "rmdir":
@@ -144,12 +155,10 @@ class Terminal {
 					//     redirectOutput(parser.getArgs());
 					//     break;
 
-
 					// Zyad
 					// case ">>":
 					//     appendOutput(parser.getArgs());
 					//     break;
-
 
 					// Zyad
 					// case "zip":
@@ -167,15 +176,19 @@ class Terminal {
 			}
 		}
 	}
+}
 
-	public static void Main(String[] args) {
+public class Main {
+	static Parser parser = new Parser();
+
+	public static void main(String[] args) {
 		Scanner scanner = new Scanner(System.in);
-		var terminal = new Terminal();
+		Terminal terminal = new Terminal(parser);
+
 		while (true) {
 			String cwd = System.getProperty("user.dir");
 			System.out.println(cwd + ">");
 
-			// System.out.println("Please , enter a command...");
 			String input = scanner.nextLine();
 			if (input.isEmpty()) {
 				System.out.println("Empty Command!!");
@@ -194,8 +207,6 @@ class Terminal {
 			}
 
 			terminal.chooseCommandAction();
-			// you have the command name && the arguments
-			// implement your commands based on the partitions file
 		}
 	}
 }
