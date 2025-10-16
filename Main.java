@@ -1,3 +1,6 @@
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Scanner;
@@ -59,8 +62,8 @@ class Parser {
 }
 
 class CommandList {
-	public static List<String> COMMANDS = Arrays.asList("pwd", "cd", "ls", "mkdir",
-		"rmdir", "touch", "cp", "cp -r", "rm", "cat", "wc", ">", ">>", "zip", "unzip");
+	public static List<String> COMMANDS = Arrays.asList("pwd", "cd", "ls", "mkdir", "rmdir",
+		"touch", "cp", "cp -r", "rm", "cat", "wc", ">", ">>", "zip", "unzip");
 }
 
 class Terminal {
@@ -90,7 +93,104 @@ class Terminal {
 	}
 
 	public void mkdir(String[] args) {
-		System.out.println("this is mkdir");
+		if (args == null || args.length == 0) {
+			System.out.println("mkdir: missing operands");
+			return;
+		}
+
+		// file/s creation
+		for (int i = 0; i < args.length; i++) {
+			String dirName = args[i];
+			File dir = new File(dirName);
+
+			if (dir.exists()) {
+				System.out.println(dirName + " dir already exists");
+			} else if (dir.mkdir()) {
+				System.out.println(dirName + " dir created");
+			} else {
+				System.out.println("mkdir: cannot create directory '" + dirName +
+					"': Permission denied or invalid path");
+			}
+		}
+	}
+
+	public void rmdir(String[] args) {
+		if (args == null || args.length == 0) {
+			System.out.println("rmdir: missing operand");
+			return;
+		}
+
+		for (int i = 0; i < args.length; i++) {
+			String dirName = args[i];
+
+			// Handle rmdir * case - remove all empty directories
+			if (dirName.equals("*")) {
+				File currentDir = new File(".");
+				File[] files = currentDir.listFiles();
+
+				if (files != null) {
+					for (File file : files) {
+						if (file.isDirectory()) {
+							if (file.list().length == 0) {
+								if (file.delete()) {
+									System.out.println(file.getName() + " directory removed");
+								} else {
+									System.out.println("rmdir: failed to remove '" +
+										file.getName() + "': Permission denied");
+								}
+							}
+						}
+					}
+				}
+			} else {
+				// Handle specific directory removal
+				File dir = new File(dirName);
+
+				if (!dir.exists()) {
+					System.out.println(
+						"failed to remove '" + dirName + "': No such file or directory");
+				} else if (!dir.isDirectory()) {
+					System.out.println("failed to remove '" + dirName + "': Not a directory");
+				} else if (dir.list().length > 0) {
+					System.out.println("failed to remove '" + dirName + "': Directory not empty");
+				} else if (dir.delete()) {
+					System.out.println(dirName + " directory removed");
+				} else {
+					System.out.println("failed to remove '" + dirName + "': Permission denied");
+				}
+			}
+		}
+	}
+
+	public void cat(String[] args) {
+		if (args == null || args.length == 0) {
+			System.err.println("cat: call with 0 arguments");
+		}
+
+		// one argument
+		if (args.length == 1) {
+			try (BufferedReader reader = new BufferedReader(new FileReader(args[0]))) {
+				String line;
+				while ((line = reader.readLine()) != null) {
+					System.out.println(line);
+				}
+			} catch (Exception e) {
+				System.out.println("cat: " + args[0] + ": " + e.getMessage());
+			}
+		}
+		// two arguments ( concatenate both files content )
+		else {
+			for (String fileName : args) {
+				try (BufferedReader reader = new BufferedReader(new FileReader(fileName))) {
+					String line;
+					while ((line = reader.readLine()) != null) {
+						System.out.println(line);
+					}
+				} catch (Exception e) {
+					System.out.println("cat: " + fileName + ": " + e.getMessage());
+				}
+			}
+		}
 	}
 
 	// This method will choose the suitable command method to be called
@@ -107,68 +207,69 @@ class Terminal {
 
 				// Mohamed
 				// case "ls":
-				//     ls();
-				//     break;
+				// ls();
+				// break;
 
 				// AbuHamed
 				case "mkdir":
 					mkdir(parser.getArgs());
 					break;
 
-					// AbuHamed
-					// case "rmdir":
-					//     rmdir(parser.getArgs());
-					//     break;
+				// AbuHamed
+				case "rmdir":
+					rmdir(parser.getArgs());
+					break;
+
+				// AbuHamed
+				case "cat":
+					cat(parser.getArgs());
+					break;
 
 					// Joo
 					// case "touch":
-					//     touch(parser.getArgs());
-					//     break;
+					// touch(parser.getArgs());
+					// break;
 
 					// Joo
 					// case "cp":
-					//     cp(parser.getArgs());
-					//     break;
+					// cp(parser.getArgs());
+					// break;
 
 					// Joo
 					// case "cp -r":
-					//     cp_r(parser.getArgs());
-					//     break;
+					// cp_r(parser.getArgs());
+					// break;
 
 					// Joo
 					// case "rm":
-					//     rm(parser.getArgs());
-					//     break;
+					// rm(parser.getArgs());
+					// break;
 
-					// AbuHamed
-					// case "cat":
-					//     cat(parser.getArgs());
-					//     break;
 
 					// Zyad
 					// case "wc":
-					//     wc(parser.getArgs());
-					//     break;
+					// wc(parser.getArgs());
+					// break;
 
 					// Zyad
 					// case ">":
-					//     redirectOutput(parser.getArgs());
-					//     break;
+					// redirectOutput(parser.getArgs());
+					// break;
 
 					// Zyad
 					// case ">>":
-					//     appendOutput(parser.getArgs());
-					//     break;
+					// appendOutput(parser.getArgs());
+					// break;
 
 					// Zyad
 					// case "zip":
-					//     zip(parser.getArgs());
-					//     break;
+					// zip(parser.getArgs());
+					// break;
 
 					// Zyad
 					// case "unzip":
-					//     unzip(parser.getArgs());
-					//     break;
+					// unzip(parser.getArgs());
+					// break;
 
 				default:
 					System.out.println("Invalid command: " + parser.getCommandName());
