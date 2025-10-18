@@ -115,6 +115,34 @@ class Terminal {
 		}
 	}
 
+	public void ls() {
+		try {
+			File currDir = new File(".");
+
+			File[] files = currDir.listFiles();
+
+			if (files == null) System.err.println("ls: permission denied");
+
+			Arrays.sort(files);
+
+			for (File file : files) {
+				if (!file.getName().startsWith(".")) {
+					if (file.isDirectory()) {
+						System.out.println(file.getName() + "/");
+					} else {
+						System.out.println(file.getName());
+					}
+				}
+			}
+		}
+
+		catch (SecurityException e) {
+			System.err.println("ls: permission denied");
+		} catch (Exception e) {
+			System.err.println("ls: " + e.getMessage());
+		}
+	}
+
 	public void mkdir(String[] args) {
 		if (args == null || args.length == 0) {
 			System.out.println("mkdir: missing operands");
@@ -253,14 +281,15 @@ class Terminal {
 					pwd();
 					break;
 
+				// Mohamed
 				case "cd":
 					cd(parser.getArgs());
 					break;
 
-				// Mohamed
-				// case "ls":
-				// ls();
-				// break;
+				// AbuHamed
+				case "ls":
+					ls();
+					break;
 
 				// AbuHamed
 				case "mkdir":
