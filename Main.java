@@ -74,9 +74,32 @@ class Terminal {
 		this.parser = parser;
 	}
 
-	public String pwd() {
-		// just for testing
-		return "pwd has been done";
+	public void pwd() {
+		try {
+			String currentPath = System.getProperty("user.dir");
+
+			// Split the path by file separator
+			String[] pathParts =
+				currentPath.split(File.separator.equals("\\") ? "\\\\" : File.separator);
+
+			if (pathParts.length >= 2) {
+				// Print last two directories: outer and current
+				String outerDir = pathParts[pathParts.length - 2];
+				String currentDir = pathParts[pathParts.length - 1];
+				System.out.println(outerDir + File.separator + currentDir);
+			} else if (pathParts.length == 1) {
+				// Only one directory (root case)
+				System.out.println(pathParts[0]);
+			} else {
+				// Fallback: print full path
+				System.out.println(currentPath);
+			}
+
+		} catch (SecurityException e) {
+			System.err.println("pwd: Permission denied");
+		} catch (Exception e) {
+			System.err.println("pwd: " + e.getMessage());
+		}
 	}
 
 	public void cd(String[] args) {
@@ -193,12 +216,41 @@ class Terminal {
 		}
 	}
 
+
+	// word count
+	public void wc(String fileName) {
+		Integer lines = 0, words = 0, chars = 0;
+
+		try (BufferedReader reader = new BufferedReader(new FileReader(fileName))) {
+			String line;
+			while ((line = reader.readLine()) != null) {
+				lines++;
+				chars += line.length();
+
+				if (!line.trim().isEmpty()) {
+					String[] wordArray = line.trim().split("\\s+");
+					words += wordArray.length;
+				}
+			}
+		} catch (java.io.FileNotFoundException e) {
+			System.err.println("wc: " + fileName + " : No such file or directory");
+		} catch (java.io.IOException e) {
+			System.err.println("wc: " + fileName + ": " + e.getMessage());
+		} catch (SecurityException e) {
+			System.err.println("wc: " + fileName + ": permission denied");
+		} catch (Exception e) {
+			System.out.println("wc: " + fileName + ": " + e.getMessage());
+		}
+		System.out.println(lines + " " + words + " " + chars + " " + fileName);
+	}
+
+
 	// This method will choose the suitable command method to be called
 	public void chooseCommandAction() {
 		if (parser != null) {
 			switch (parser.getCommandName().toLowerCase()) {
 				case "pwd":
-					System.out.println(pwd());
+					pwd();
 					break;
 
 				case "cd":
@@ -225,6 +277,11 @@ class Terminal {
 					cat(parser.getArgs());
 					break;
 
+				// AbuHamed
+				case "wc":
+					wc(parser.getArgs()[0]);
+					break;
+
 					// Joo
 					// case "touch":
 					// touch(parser.getArgs());
@@ -243,12 +300,6 @@ class Terminal {
 					// Joo
 					// case "rm":
 					// rm(parser.getArgs());
-					// break;
-
-
-					// Zyad
-					// case "wc":
-					// wc(parser.getArgs());
 					// break;
 
 					// Zyad
