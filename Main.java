@@ -272,7 +272,7 @@ class Terminal {
 		System.out.println(lines + " " + words + " " + chars + " " + fileName);
 	}
 
-
+	public void touch() {}
 	// This method will choose the suitable command method to be called
 	public void chooseCommandAction() {
 		if (parser != null) {
