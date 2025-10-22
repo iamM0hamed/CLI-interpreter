@@ -1,9 +1,16 @@
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.FileReader;
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Scanner;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
+import java.util.zip.ZipOutputStream;
+
 
 class Parser {
 	String commandName = "";
@@ -272,7 +279,270 @@ class Terminal {
 		System.out.println(lines + " " + words + " " + chars + " " + fileName);
 	}
 
+
+	// Helper method to add a single file to zip
+	private boolean addFileToZip(ZipOutputStream zos, File file, String basePath) {
+		try (FileInputStream fis = new FileInputStream(file)) {
+			String entryName = basePath + file.getName();
+			ZipEntry zipEntry = new ZipEntry(entryName);
+			zos.putNextEntry(zipEntry);
+
+			byte[] buffer = new byte[1024];
+			int length;
+			while ((length = fis.read(buffer)) > 0) {
+				zos.write(buffer, 0, length);
+			}
+
+			zos.closeEntry();
+			System.out.println("Added: " + entryName);
+			return true;
+
+		} catch (IOException e) {
+			System.err.println("zip: Error adding " + file.getName() + ": " + e.getMessage());
+			return false;
+		}
+	}
+
+	// Helper method to recursively add directory to zip
+	private boolean addDirectoryToZip(ZipOutputStream zos, File directory, String basePath) {
+		boolean hasFiles = false;
+		File[] files = directory.listFiles();
+
+		if (files == null) {
+			System.err.println("zip: Cannot read directory " + directory.getName());
+			return false;
+		}
+
+		String dirPath = basePath + directory.getName() + "/";
+
+		// Add directory entry (empty directories)
+		try {
+			ZipEntry dirEntry = new ZipEntry(dirPath);
+			zos.putNextEntry(dirEntry);
+			zos.closeEntry();
+		} catch (IOException e) {
+			System.err.println("zip: Error adding directory " + directory.getName());
+		}
+
+		// Add all files and subdirectories
+		for (File file : files) {
+			if (file.isDirectory()) {
+				// Recursively add subdirectory
+				if (addDirectoryToZip(zos, file, dirPath)) {
+					hasFiles = true;
+				}
+			} else {
+				// Add file
+				if (addFileToZip(zos, file, dirPath)) {
+					hasFiles = true;
+				}
+			}
+		}
+
+		return hasFiles;
+	}
+
+
+	public void zip(String[] args) {
+		if (args == null || args.length < 2) {
+			System.err.println("zip: missing operands");
+			System.err.println("Usage: zip [-r] <archive_name.zip> <file1> [file2] [file3] ...");
+			return;
+		}
+
+		boolean recursive = false;
+		int startIndex = 0;
+
+		// Check for -r flag
+		if (args[0].equals("-r")) {
+			recursive = true;
+			startIndex = 1;
+			if (args.length < 3) {
+				System.err.println("zip: missing operands");
+				System.err.println("Usage: zip -r <archive_name.zip> <directory>");
+				return;
+			}
+		}
+
+		String zipFileName = args[startIndex];
+		// Add .zip extension if not present
+		if (!zipFileName.toLowerCase().endsWith(".zip")) {
+			zipFileName += ".zip";
+		}
+
+		try (FileOutputStream fos = new FileOutputStream(zipFileName);
+			 ZipOutputStream zos = new ZipOutputStream(fos)) {
+			boolean hasValidFiles = false;
+
+			// Process each file/directory to be zipped
+			for (int i = startIndex + 1; i < args.length; i++) {
+				String fileName = args[i];
+				File file = new File(fileName);
+
+				if (!file.exists()) {
+					System.err.println("zip: " + fileName + ": No such file or directory");
+					continue;
+				}
+
+				if (file.isDirectory()) {
+					if (recursive) {
+						// Recursively add directory
+						if (addDirectoryToZip(zos, file, "")) {
+							hasValidFiles = true;
+						}
+					} else {
+						System.err.println("zip: " + fileName +
+							": Is a directory (skipping, use -r for recursive)");
+					}
+				} else {
+					// Add single file
+					if (addFileToZip(zos, file, "")) {
+						hasValidFiles = true;
+					}
+				}
+			}
+
+			if (hasValidFiles) {
+				System.out.println("Archive '" + zipFileName + "' created successfully");
+			} else {
+				System.err.println("zip: No valid files to archive");
+				// Delete empty zip file
+				new File(zipFileName).delete();
+			}
+
+		} catch (IOException e) {
+			System.err.println("zip: Error creating archive: " + e.getMessage());
+		} catch (SecurityException e) {
+			System.err.println("zip: Permission denied");
+		} catch (Exception e) {
+			System.err.println("zip: " + e.getMessage());
+		}
+	}
+
+
+	public void unzip(String[] args) {
+		if (args == null || args.length == 0) {
+			System.err.println("unzip: missing operands");
+			System.err.println("Usage: unzip <archive_name.zip> [-d destination_directory]");
+			return;
+		}
+
+		String zipFileName = args[0];
+		String extractPath = "."; // Default to current directory
+
+		// Check for -d flag and destination directory
+		if (args.length >= 3 && args[1].equals("-d")) {
+			extractPath = args[2];
+		} else if (args.length == 2) {
+			System.err.println("unzip: option requires an argument -- d");
+			System.err.println("Usage: unzip <archive_name.zip> [-d destination_directory]");
+			return;
+		}
+
+		// Add .zip extension if not present
+		if (!zipFileName.toLowerCase().endsWith(".zip")) {
+			zipFileName += ".zip";
+		}
+
+		// Check if zip file exists
+		File zipFile = new File(zipFileName);
+		if (!zipFile.exists()) {
+			System.err.println("unzip: " + zipFileName + ": No such file or directory");
+			return;
+		}
+
+		if (!zipFile.isFile()) {
+			System.err.println("unzip: " + zipFileName + ": Not a file");
+			return;
+		}
+
+		// Create destination directory if it doesn't exist
+		File destDir = new File(extractPath);
+		if (!destDir.exists()) {
+			if (!destDir.mkdirs()) {
+				System.err.println("unzip: Cannot create destination directory: " + extractPath);
+				return;
+			}
+			System.out.println("Created destination directory: " + extractPath);
+		}
+
+		if (!destDir.isDirectory()) {
+			System.err.println("unzip: " + extractPath + ": Not a directory");
+			return;
+		}
+
+		try (FileInputStream fis = new FileInputStream(zipFile);
+			 ZipInputStream zis = new ZipInputStream(fis)) {
+			ZipEntry entry;
+			boolean hasExtracted = false;
+
+			while ((entry = zis.getNextEntry()) != null) {
+				String entryName = entry.getName();
+
+				// Security check - skip entries that try to go outside destination directory
+				if (entryName.contains("..")) {
+					System.err.println("unzip: Skipping dangerous path: " + entryName);
+					continue;
+				}
+
+				// Create full path in destination directory
+				File outputFile = new File(destDir, entryName);
+
+				if (entry.isDirectory()) {
+					// Create directory
+					if (outputFile.mkdirs()) {
+						System.out.println("Created directory: " + outputFile.getPath());
+					} else if (outputFile.exists()) {
+						System.out.println("Directory already exists: " + outputFile.getPath());
+					} else {
+						System.err.println(
+							"unzip: Failed to create directory: " + outputFile.getPath());
+					}
+				} else {
+					// Create parent directories if they don't exist
+					File parentDir = outputFile.getParentFile();
+					if (parentDir != null && !parentDir.exists()) {
+						parentDir.mkdirs();
+					}
+
+					// Extract file
+					try (FileOutputStream fos = new FileOutputStream(outputFile)) {
+						byte[] buffer = new byte[1024];
+						int length;
+						while ((length = zis.read(buffer)) > 0) {
+							fos.write(buffer, 0, length);
+						}
+						System.out.println("Extracted: " + outputFile.getPath());
+						hasExtracted = true;
+					} catch (IOException e) {
+						System.err.println(
+							"unzip: Error extracting " + entryName + ": " + e.getMessage());
+					}
+				}
+
+				zis.closeEntry();
+			}
+
+			if (hasExtracted) {
+				System.out.println("Archive '" + zipFileName + "' extracted successfully to '" +
+					extractPath + "'");
+			} else {
+				System.out.println("unzip: No files extracted from " + zipFileName);
+			}
+
+		} catch (IOException e) {
+			System.err.println("unzip: Error reading archive: " + e.getMessage());
+		} catch (SecurityException e) {
+			System.err.println("unzip: Permission denied");
+		} catch (Exception e) {
+			System.err.println("unzip: " + e.getMessage());
+		}
+	}
+
+
 	public void touch() {}
+
+
 	// This method will choose the suitable command method to be called
 	public void chooseCommandAction() {
 		if (parser != null) {
@@ -311,6 +581,16 @@ class Terminal {
 					wc(parser.getArgs()[0]);
 					break;
 
+				// Zyad
+				case "zip":
+					zip(parser.getArgs());
+					break;
+
+				// Zyad
+				case "unzip":
+					unzip(parser.getArgs());
+					break;
+
 					// Joo
 					// case "touch":
 					// touch(parser.getArgs());
@@ -341,15 +621,6 @@ class Terminal {
 					// appendOutput(parser.getArgs());
 					// break;
 
-					// Zyad
-					// case "zip":
-					// zip(parser.getArgs());
-					// break;
-
-					// Zyad
-					// case "unzip":
-					// unzip(parser.getArgs());
-					// break;
 
 				default:
 					System.out.println("Invalid command: " + parser.getCommandName());
