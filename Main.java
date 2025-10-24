@@ -10,6 +10,7 @@ import java.util.Scanner;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
+import java.nio.file.Path;
 
 
 class Parser {
@@ -76,55 +77,53 @@ class CommandList {
 class Terminal {
 	// Implement The All commands in a methods
 	private Parser parser;
+	private File currentDirectory;
 
 	public Terminal(Parser parser) {
 		this.parser = parser;
+		this.currentDirectory = new File(System.getProperty("user.dir"));
 	}
 
-	public void pwd() {
-		try {
-			String currentPath = System.getProperty("user.dir");
-
-			// Split the path by file separator
-			String[] pathParts =
-				currentPath.split(File.separator.equals("\\") ? "\\\\" : File.separator);
-
-			if (pathParts.length >= 2) {
-				// Print last two directories: outer and current
-				String outerDir = pathParts[pathParts.length - 2];
-				String currentDir = pathParts[pathParts.length - 1];
-				System.out.println(outerDir + File.separator + currentDir);
-			} else if (pathParts.length == 1) {
-				// Only one directory (root case)
-				System.out.println(pathParts[0]);
-			} else {
-				// Fallback: print full path
-				System.out.println(currentPath);
-			}
-
-		} catch (SecurityException e) {
-			System.err.println("pwd: Permission denied");
-		} catch (Exception e) {
-			System.err.println("pwd: " + e.getMessage());
-		}
+	public void pwd() {		
+			system.out.println(currentDirectory.getAbsolutepath());		
 	}
 
 	public void cd(String[] args) {
-		// just for testing
-		System.out.println("cd has been done");
-		if (args == null || args.length == 0) {
-			System.out.println("There is no arguments");
-			return;
-		}
-		System.out.print("The arguments are: ");
-		for (int i = 0; i < args.length; i++) {
-			System.out.println(args[i]);
+		try {
+			if (args == null || args.length == 0) {
+				currentDirectory = new File(System.getProperty("user.dir"));
+				return;
+			}
+			else if(arg.length == 1 && args[0].equals("..")){
+				currentDirectory = currentDirectory.getParentFile();
+				return; 
+			}
+			else{
+				if(new File(currentDirectory, args[0]).isAbsolute() && new File(currentDirectory, args[0]).isDirectory()){
+					currentDirectory = new File(args[0]);
+					return;
+				}
+				else{
+					temCurrentDirectory = new File(get(currentDirectory), args[0]);
+					if(temCurrentDirectory.isDirectory()){
+						currentDirectory = temCurrentDirectory;
+						return;
+					}
+					else{
+						System.err.println("cd: " + args[0] + ": No such file or directory");
+						return;
+					}
+					return;
+				}
+			}
+		}catch (Exception e) {
+			System.err.println("cd: " + e.getMessage());
 		}
 	}
 
 	public void ls() {
 		try {
-			File currDir = new File(".");
+			File currDir = currentDirectory;
 
 			File[] files = currDir.listFiles();
 
@@ -142,7 +141,6 @@ class Terminal {
 				}
 			}
 		}
-
 		catch (SecurityException e) {
 			System.err.println("ls: permission denied");
 		} catch (Exception e) {
