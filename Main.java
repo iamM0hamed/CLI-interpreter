@@ -84,6 +84,9 @@ class Terminal {
 		this.currentDirectory = new File(System.getProperty("user.dir"));
 	}
 
+	public static File getCurrentDirectory() {
+		return currentDirectory;
+	}
 	public void pwd() {		
 			System.out.println(currentDirectory.getAbsolutePath());		
 	}
@@ -99,7 +102,7 @@ class Terminal {
 				return; 
 			}
 			else{
-				if(new File(currentDirectory, args[0]).isAbsolute() && new File(args[0]).isDirectory()){
+				if(new File( args[0]).isAbsolute() && new File(args[0]).isDirectory()){
 					currentDirectory = new File(args[0]);
 					return;
 				}
@@ -107,6 +110,7 @@ class Terminal {
 					Path temCurrentDirectory = Paths.get(currentDirectory.getAbsolutePath(), args[0]);
 					if(Files.isDirectory(temCurrentDirectory)){
 						currentDirectory = temCurrentDirectory.toFile();
+						currentDirectory = currentDirectory.getAbsoluteFile();
 						return;
 					}
 					else{
@@ -635,7 +639,7 @@ public class Main {
 		Terminal terminal = new Terminal(parser);
 
 		while (true) {
-			File cwd = Terminal.currentDirectory;
+			File cwd = terminal.getCurrentDirectory();
 			System.out.println(cwd + ">");
 
 			String input = scanner.nextLine();
