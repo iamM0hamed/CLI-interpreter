@@ -4,13 +4,14 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.PrintStream;
+import java.nio.file.*;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Scanner;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
-import java.nio.file.*;
 
 
 class Parser {
@@ -87,8 +88,8 @@ class Terminal {
 	public static File getCurrentDirectory() {
 		return currentDirectory;
 	}
-	public void pwd() {		
-			System.out.println(currentDirectory.getAbsolutePath());		
+	public void pwd() {
+		System.out.println(currentDirectory.getAbsolutePath());
 	}
 
 	public void cd(String[] args) {
@@ -96,30 +97,27 @@ class Terminal {
 			if (args == null || args.length == 0) {
 				currentDirectory = new File(System.getProperty("user.dir"));
 				return;
-			}
-			else if(args.length == 1 && args[0].equals("..")){
+			} else if (args.length == 1 && args[0].equals("..")) {
 				currentDirectory = currentDirectory.getParentFile();
-				return; 
-			}
-			else{
-				if(new File( args[0]).isAbsolute() && new File(args[0]).isDirectory()){
+				return;
+			} else {
+				if (new File(args[0]).isAbsolute() && new File(args[0]).isDirectory()) {
 					currentDirectory = new File(args[0]);
 					return;
-				}
-				else{
-					Path temCurrentDirectory = Paths.get(currentDirectory.getAbsolutePath(), args[0]);
-					if(Files.isDirectory(temCurrentDirectory)){
+				} else {
+					Path temCurrentDirectory =
+						Paths.get(currentDirectory.getAbsolutePath(), args[0]);
+					if (Files.isDirectory(temCurrentDirectory)) {
 						currentDirectory = temCurrentDirectory.toFile();
 						currentDirectory = currentDirectory.getAbsoluteFile();
 						return;
-					}
-					else{
+					} else {
 						System.err.println("cd: " + args[0] + ": No such file or directory");
 						return;
 					}
 				}
 			}
-		}catch (Exception e) {
+		} catch (Exception e) {
 			System.err.println("cd: " + e.getMessage());
 		}
 	}
@@ -143,8 +141,7 @@ class Terminal {
 					}
 				}
 			}
-		}
-		catch (SecurityException e) {
+		} catch (SecurityException e) {
 			System.err.println("ls: permission denied");
 		} catch (Exception e) {
 			System.err.println("ls: " + e.getMessage());
@@ -161,6 +158,10 @@ class Terminal {
 		for (int i = 0; i < args.length; i++) {
 			String dirName = args[i];
 			File dir = new File(dirName);
+			// resolve relative paths against the shell's currentDirectory
+			if (!dir.isAbsolute()) {
+				dir = new File(currentDirectory, dirName);
+			}
 
 			if (dir.exists()) {
 				System.out.println(dirName + " dir already exists");
@@ -526,7 +527,8 @@ class Terminal {
 
 			if (hasExtracted) {
 				System.out.println("Archive '" + zipFileName + "' extracted successfully to '" +
-					extractPath + "'");
+					(extractPath.equals(".") ? "current dir" : extractPath) + "'");
+
 			} else {
 				System.out.println("unzip: No files extracted from " + zipFileName);
 			}
@@ -541,7 +543,280 @@ class Terminal {
 	}
 
 
-	public void touch() {}
+	public void touch(String[] args) {
+		if (args == null || args.length == 0) {
+			System.out.println("touch: missing file operand");
+			return;
+		}
+
+		for (String fileName : args) {
+			try {
+				// resolve relative paths against the shell's currentDirectory
+				File file = new File(fileName);
+				if (!file.isAbsolute()) {
+					file = new File(currentDirectory, fileName);
+				}
+
+				// Create parent directories if needed
+				File parent = file.getParentFile();
+				if (parent != null && !parent.exists()) {
+					parent.mkdirs();
+				}
+
+				if (file.exists()) {
+					// Update last modified timestamp
+					file.setLastModified(System.currentTimeMillis());
+					System.out.println("Updated timestamp: " + file.getPath());
+				} else if (file.createNewFile()) {
+					System.out.println("File created: " + file.getPath());
+				} else {
+					System.out.println("touch: cannot create file '" + fileName + "'");
+				}
+			} catch (IOException e) {
+				System.err.println("touch: " + e.getMessage());
+			}
+		}
+	}
+
+	public void rm(String[] args) {
+		if (args == null || args.length == 0) {
+			System.out.println("rm: missing file operand");
+			return;
+		}
+
+		for (String fileName : args) {
+			// resolve relative paths against the shell's currentDirectory
+			File file = new File(fileName);
+			if (!file.isAbsolute()) {
+				file = new File(currentDirectory, fileName);
+			}
+
+			if (!file.exists()) {
+				System.out.println(
+					"rm: cannot remove '" + fileName + "': No such file or directory");
+			} else if (file.isDirectory()) {
+				System.out.println("rm: cannot remove '" + fileName + "': Is a directory");
+			} else if (file.delete()) {
+				System.out.println("Removed: " + file.getPath());
+			} else {
+				System.out.println("rm: failed to remove '" + fileName + "'");
+			}
+		}
+	}
+
+	public void cp(String[] args) {
+		if (args == null || args.length == 0) {
+			System.out.println("cp: missing file operand");
+			System.out.println(
+				"Usage: cp <source> <destination>    or    cp -r <source_dir> <destination_dir>");
+			return;
+		}
+
+		// Support "cp -r src dst" where parser gives args ["-r","src","dst"]
+		if (args.length >= 1 && "-r".equals(args[0])) {
+			if (args.length != 3) {
+				System.out.println("cp -r: incorrect number of arguments");
+				System.out.println("Usage: cp -r <source_directory> <destination_directory>");
+				return;
+			}
+			// delegate to cp_r with just the two directory arguments
+			cp_r(new String[] {args[1], args[2]});
+			return;
+		}
+
+		if (args.length != 2) {
+			System.out.println("cp: wrong number of arguments");
+			System.out.println("Usage: cp <source> <destination>");
+			return;
+		}
+
+		// Resolve paths relative to shell currentDirectory
+		File source = new File(args[0]);
+		if (!source.isAbsolute()) source = new File(currentDirectory, args[0]);
+
+		File dest = new File(args[1]);
+		if (!dest.isAbsolute()) dest = new File(currentDirectory, args[1]);
+
+		if (!source.exists()) {
+			System.out.println("cp: cannot stat '" + args[0] + "': No such file or directory");
+			return;
+		}
+		if (source.isDirectory()) {
+			System.out.println("cp: -r not specified; omitting directory '" + args[0] + "'");
+			return;
+		}
+
+		// If destination is an existing directory, copy into it using source basename
+		if (dest.exists() && dest.isDirectory()) {
+			dest = new File(dest, source.getName());
+		} else {
+			// Ensure parent of destination exists
+			File parent = dest.getParentFile();
+			if (parent != null && !parent.exists()) {
+				if (!parent.mkdirs()) {
+					System.out.println("cp: cannot create directory '" + parent.getPath() + "'");
+					return;
+				}
+			}
+		}
+
+		try (FileInputStream fis = new FileInputStream(source);
+			 FileOutputStream fos = new FileOutputStream(dest)) {
+			byte[] buffer = new byte[8192];
+			int length;
+			while ((length = fis.read(buffer)) > 0) {
+				fos.write(buffer, 0, length);
+			}
+			System.out.println("Copied: " + source.getPath() + " → " + dest.getPath());
+		} catch (IOException e) {
+			System.err.println("cp: error copying: " + e.getMessage());
+		}
+	}
+
+
+	public void cp_r(String[] args) {
+		if (args == null || args.length != 2) {
+			System.out.println("cp -r: incorrect number of arguments");
+			System.out.println("Usage: cp -r <source_directory> <destination_directory>");
+			return;
+		}
+
+		// Resolve paths relative to shell currentDirectory
+		File sourceDir = new File(args[0]);
+		if (!sourceDir.isAbsolute()) sourceDir = new File(currentDirectory, args[0]);
+
+		File destDir = new File(args[1]);
+		if (!destDir.isAbsolute()) destDir = new File(currentDirectory, args[1]);
+
+		// Validate source
+		if (!sourceDir.exists()) {
+			System.out.println("cp -r: cannot stat '" + args[0] + "': No such file or directory");
+			return;
+		}
+		if (!sourceDir.isDirectory()) {
+			System.out.println("cp -r: source is not a directory");
+			return;
+		}
+
+		// If destination exists and is a file -> error
+		if (destDir.exists() && destDir.isFile()) {
+			System.out.println("cp -r: destination exists and is a file");
+			return;
+		}
+
+		// Target is dest/<sourceName>
+		File targetDir = new File(destDir, sourceDir.getName());
+
+		// Prevent copying directory into its own subtree (use canonical paths)
+		try {
+			String srcCanon = sourceDir.getCanonicalPath();
+			String targetCanon = targetDir.getCanonicalPath();
+			if (targetCanon.equals(srcCanon) || targetCanon.startsWith(srcCanon + File.separator)) {
+				System.out.println("cp -r: cannot copy a directory into its own subdirectory");
+				return;
+			}
+		} catch (IOException ignored) {
+		}
+
+		// Ensure destination (parent destDir) exists (create if needed)
+		if (!destDir.exists()) {
+			if (!destDir.mkdirs()) {
+				System.out.println(
+					"cp -r: cannot create destination directory '" + destDir.getPath() + "'");
+				return;
+			}
+		}
+
+		// Create the target directory where source will be copied
+		if (!targetDir.exists()) {
+			if (!targetDir.mkdirs()) {
+				System.out.println(
+					"cp -r: cannot create target directory '" + targetDir.getPath() + "'");
+				return;
+			}
+		}
+
+		// Copy recursively using the existing File-based helper
+		try {
+			copyDirectoryRecursive(sourceDir, targetDir);
+			System.out.println(
+				"Directory copied: " + sourceDir.getPath() + " → " + targetDir.getPath());
+		} catch (Exception e) {
+			System.err.println("cp -r: error copying directory: " + e.getMessage());
+		}
+	}
+
+	private void copyDirectoryRecursive(File sourceDir, File destDir) {
+		File[] files = sourceDir.listFiles();
+		if (files == null) return;
+
+		for (File file : files) {
+			File destFile = new File(destDir, file.getName());
+
+			if (file.isDirectory()) {
+				destFile.mkdirs();
+				copyDirectoryRecursive(file, destFile);
+			} else {
+				try (FileInputStream fis = new FileInputStream(file);
+					 FileOutputStream fos = new FileOutputStream(destFile)) {
+					byte[] buffer = new byte[1024];
+					int length;
+					while ((length = fis.read(buffer)) > 0) {
+						fos.write(buffer, 0, length);
+					}
+				} catch (IOException e) {
+					System.err.println("cp -r: error copying file " + file.getPath());
+				}
+			}
+		}
+	}
+
+
+	public void redirectOutput(String mainCommand, String[] args, String fileName, boolean append) {
+		// Use the correct File path relative to currentDirectory
+		File outputFile = new File(currentDirectory, fileName);
+		PrintStream originalOut = System.out; // Keep a reference to the console output
+
+		try (PrintStream fileOut = new PrintStream(new FileOutputStream(outputFile, append))) {
+			// 1. Redirect System.out to the file
+			System.setOut(fileOut);
+
+			// 2. Execute the main command
+			switch (mainCommand.toLowerCase()) {
+				case "ls":
+					ls();
+					break;
+				case "cat":
+					cat(args);
+					break;
+				case "wc":
+					if (args.length > 0) {
+						wc(args[0]);
+					} else {
+						// Error is usually printed to stderr, which is not redirected
+						originalOut.println("wc: missing operands to redirect");
+					}
+					break;
+				default:
+					originalOut.println("Command not supported for redirection: " + mainCommand);
+					break;
+			}
+
+			// Optional: Print a confirmation message to the original console
+			originalOut.println("Output of '" + mainCommand + "' " +
+				(append ? "appended to" : "written to") + " '" + fileName + "'");
+
+		} catch (IOException e) {
+			// Print error to the original console (originalOut)
+			originalOut.println(
+				"Redirection Error: Could not write to file " + fileName + ": " + e.getMessage());
+		} catch (SecurityException e) {
+			originalOut.println("Redirection Error: Permission denied for " + fileName);
+		} finally {
+			// 3. IMPORTANT: Restore System.out to the console
+			System.setOut(originalOut);
+		}
+	}
 
 
 	// This method will choose the suitable command method to be called
@@ -582,35 +857,35 @@ class Terminal {
 					wc(parser.getArgs()[0]);
 					break;
 
-				// Zyad
+				// AbuHamed
 				case "zip":
 					zip(parser.getArgs());
 					break;
 
-				// Zyad
+				// AbuHamed
 				case "unzip":
 					unzip(parser.getArgs());
 					break;
 
-					// Joo
-					// case "touch":
-					// touch(parser.getArgs());
-					// break;
+				// Joo
+				case "touch":
+					touch(parser.getArgs());
+					break;
 
-					// Joo
-					// case "cp":
-					// cp(parser.getArgs());
-					// break;
+				// Joo
+				case "cp":
+					cp(parser.getArgs());
+					break;
 
-					// Joo
-					// case "cp -r":
-					// cp_r(parser.getArgs());
-					// break;
+				// Joo
+				case "cp -r":
+					cp_r(parser.getArgs());
+					break;
 
-					// Joo
-					// case "rm":
-					// rm(parser.getArgs());
-					// break;
+				// Joo
+				case "rm":
+					rm(parser.getArgs());
+					break;
 
 					// Zyad
 					// case ">":
