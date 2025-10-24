@@ -10,7 +10,7 @@ import java.util.Scanner;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
-import java.nio.file.Path;
+import java.nio.file.*;
 
 
 class Parser {
@@ -77,7 +77,7 @@ class CommandList {
 class Terminal {
 	// Implement The All commands in a methods
 	private Parser parser;
-	private File currentDirectory;
+	static File currentDirectory;
 
 	public Terminal(Parser parser) {
 		this.parser = parser;
@@ -85,7 +85,7 @@ class Terminal {
 	}
 
 	public void pwd() {		
-			system.out.println(currentDirectory.getAbsolutepath());		
+			System.out.println(currentDirectory.getAbsolutePath());		
 	}
 
 	public void cd(String[] args) {
@@ -94,26 +94,25 @@ class Terminal {
 				currentDirectory = new File(System.getProperty("user.dir"));
 				return;
 			}
-			else if(arg.length == 1 && args[0].equals("..")){
+			else if(args.length == 1 && args[0].equals("..")){
 				currentDirectory = currentDirectory.getParentFile();
 				return; 
 			}
 			else{
-				if(new File(currentDirectory, args[0]).isAbsolute() && new File(currentDirectory, args[0]).isDirectory()){
+				if(new File(currentDirectory, args[0]).isAbsolute() && new File(args[0]).isDirectory()){
 					currentDirectory = new File(args[0]);
 					return;
 				}
 				else{
-					temCurrentDirectory = new File(get(currentDirectory), args[0]);
-					if(temCurrentDirectory.isDirectory()){
-						currentDirectory = temCurrentDirectory;
+					Path temCurrentDirectory = Paths.get(currentDirectory.getAbsolutePath(), args[0]);
+					if(Files.isDirectory(temCurrentDirectory)){
+						currentDirectory = temCurrentDirectory.toFile();
 						return;
 					}
 					else{
 						System.err.println("cd: " + args[0] + ": No such file or directory");
 						return;
 					}
-					return;
 				}
 			}
 		}catch (Exception e) {
@@ -636,7 +635,7 @@ public class Main {
 		Terminal terminal = new Terminal(parser);
 
 		while (true) {
-			String cwd = System.getProperty("user.dir");
+			File cwd = Terminal.currentDirectory;
 			System.out.println(cwd + ">");
 
 			String input = scanner.nextLine();
