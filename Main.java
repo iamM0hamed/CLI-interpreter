@@ -20,7 +20,8 @@ class Parser {
 
 	// This method will divide the input into commandName and args
 	// where "input" is the string command entered by the user
-	public boolean parse(String input) {
+   public
+	boolean parse(String input) {
 		try {
 			input = input.trim();
 
@@ -61,38 +62,39 @@ class Parser {
 		return false;
 	}
 
-	public String getCommandName() {
-		return commandName;
-	}
+   public
+	String getCommandName() { return commandName; }
 
-	public String[] getArgs() {
-		return args;
-	}
+   public
+	String[] getArgs() { return args; }
 }
 
 class CommandList {
-	public static List<String> COMMANDS = Arrays.asList("pwd", "cd", "ls", "mkdir", "rmdir",
-		"touch", "cp", "cp -r", "rm", "cat", "wc", ">", ">>", "zip", "unzip");
+   public
+	static List<String> COMMANDS =
+		Arrays.asList("pwd", "cd", "ls", "mkdir", "rmdir", "touch", "cp", "cp -r", "rm", "cat",
+					  "wc", ">", ">>", "zip", "unzip");
 }
 
 class Terminal {
 	// Implement The All commands in a methods
-	private Parser parser;
+   private
+	Parser parser;
 	static File currentDirectory;
 
-	public Terminal(Parser parser) {
+   public
+	Terminal(Parser parser) {
 		this.parser = parser;
 		this.currentDirectory = new File(System.getProperty("user.dir"));
 	}
 
-	public static File getCurrentDirectory() {
-		return currentDirectory;
-	}
-	public void pwd() {
-		System.out.println(currentDirectory.getAbsolutePath());
-	}
+   public
+	static File getCurrentDirectory() { return currentDirectory; }
+   public
+	void pwd() { System.out.println(currentDirectory.getAbsolutePath()); }
 
-	public void cd(String[] args) {
+   public
+	void cd(String[] args) {
 		try {
 			if (args == null || args.length == 0) {
 				currentDirectory = new File(System.getProperty("user.dir"));
@@ -122,7 +124,8 @@ class Terminal {
 		}
 	}
 
-	public void ls() {
+   public
+	void ls() {
 		try {
 			File currDir = currentDirectory;
 
@@ -148,7 +151,8 @@ class Terminal {
 		}
 	}
 
-	public void mkdir(String[] args) {
+   public
+	void mkdir(String[] args) {
 		if (args == null || args.length == 0) {
 			System.out.println("mkdir: missing operands");
 			return;
@@ -169,12 +173,13 @@ class Terminal {
 				System.out.println(dirName + " dir created");
 			} else {
 				System.out.println("mkdir: cannot create directory '" + dirName +
-					"': Permission denied or invalid path");
+								   "': Permission denied or invalid path");
 			}
 		}
 	}
 
-	public void rmdir(String[] args) {
+   public
+	void rmdir(String[] args) {
 		if (args == null || args.length == 0) {
 			System.out.println("rmdir: missing operand");
 			return;
@@ -196,7 +201,7 @@ class Terminal {
 									System.out.println(file.getName() + " directory removed");
 								} else {
 									System.out.println("rmdir: failed to remove '" +
-										file.getName() + "': Permission denied");
+													   file.getName() + "': Permission denied");
 								}
 							}
 						}
@@ -207,8 +212,8 @@ class Terminal {
 				File dir = new File(dirName);
 
 				if (!dir.exists()) {
-					System.out.println(
-						"failed to remove '" + dirName + "': No such file or directory");
+					System.out.println("failed to remove '" + dirName +
+									   "': No such file or directory");
 				} else if (!dir.isDirectory()) {
 					System.out.println("failed to remove '" + dirName + "': Not a directory");
 				} else if (dir.list().length > 0) {
@@ -222,31 +227,34 @@ class Terminal {
 		}
 	}
 
-	public void cat(String[] args) {
+   public
+	void cat(String[] args) {
 		if (args == null || args.length == 0) {
 			System.err.println("cat: call with 0 arguments");
 		}
 
 		// one argument
 		if (args.length == 1) {
-			try (BufferedReader reader = new BufferedReader(new FileReader(args[0]))) {
+			try(BufferedReader reader = new BufferedReader(new FileReader(args[0]))) {
 				String line;
 				while ((line = reader.readLine()) != null) {
 					System.out.println(line);
 				}
-			} catch (Exception e) {
+			}
+			catch (Exception e) {
 				System.out.println("cat: " + args[0] + ": " + e.getMessage());
 			}
 		}
 		// two arguments ( concatenate both files content )
 		else {
 			for (String fileName : args) {
-				try (BufferedReader reader = new BufferedReader(new FileReader(fileName))) {
+				try(BufferedReader reader = new BufferedReader(new FileReader(fileName))) {
 					String line;
 					while ((line = reader.readLine()) != null) {
 						System.out.println(line);
 					}
-				} catch (Exception e) {
+				}
+				catch (Exception e) {
 					System.out.println("cat: " + fileName + ": " + e.getMessage());
 				}
 			}
@@ -255,10 +263,11 @@ class Terminal {
 
 
 	// word count
-	public void wc(String fileName) {
+   public
+	void wc(String fileName) {
 		Integer lines = 0, words = 0, chars = 0;
 
-		try (BufferedReader reader = new BufferedReader(new FileReader(fileName))) {
+		try(BufferedReader reader = new BufferedReader(new FileReader(fileName))) {
 			String line;
 			while ((line = reader.readLine()) != null) {
 				lines++;
@@ -269,13 +278,17 @@ class Terminal {
 					words += wordArray.length;
 				}
 			}
-		} catch (java.io.FileNotFoundException e) {
+		}
+		catch (java.io.FileNotFoundException e) {
 			System.err.println("wc: " + fileName + " : No such file or directory");
-		} catch (java.io.IOException e) {
+		}
+		catch (java.io.IOException e) {
 			System.err.println("wc: " + fileName + ": " + e.getMessage());
-		} catch (SecurityException e) {
+		}
+		catch (SecurityException e) {
 			System.err.println("wc: " + fileName + ": permission denied");
-		} catch (Exception e) {
+		}
+		catch (Exception e) {
 			System.out.println("wc: " + fileName + ": " + e.getMessage());
 		}
 		System.out.println(lines + " " + words + " " + chars + " " + fileName);
@@ -283,8 +296,9 @@ class Terminal {
 
 
 	// Helper method to add a single file to zip
-	private boolean addFileToZip(ZipOutputStream zos, File file, String basePath) {
-		try (FileInputStream fis = new FileInputStream(file)) {
+   private
+	boolean addFileToZip(ZipOutputStream zos, File file, String basePath) {
+		try(FileInputStream fis = new FileInputStream(file)) {
 			String entryName = basePath + file.getName();
 			ZipEntry zipEntry = new ZipEntry(entryName);
 			zos.putNextEntry(zipEntry);
@@ -298,15 +312,16 @@ class Terminal {
 			zos.closeEntry();
 			System.out.println("Added: " + entryName);
 			return true;
-
-		} catch (IOException e) {
+		}
+		catch (IOException e) {
 			System.err.println("zip: Error adding " + file.getName() + ": " + e.getMessage());
 			return false;
 		}
 	}
 
 	// Helper method to recursively add directory to zip
-	private boolean addDirectoryToZip(ZipOutputStream zos, File directory, String basePath) {
+   private
+	boolean addDirectoryToZip(ZipOutputStream zos, File directory, String basePath) {
 		boolean hasFiles = false;
 		File[] files = directory.listFiles();
 
@@ -345,7 +360,8 @@ class Terminal {
 	}
 
 
-	public void zip(String[] args) {
+   public
+	void zip(String[] args) {
 		if (args == null || args.length < 2) {
 			System.err.println("zip: missing operands");
 			System.err.println("Usage: zip [-r] <archive_name.zip> <file1> [file2] [file3] ...");
@@ -372,8 +388,8 @@ class Terminal {
 			zipFileName += ".zip";
 		}
 
-		try (FileOutputStream fos = new FileOutputStream(zipFileName);
-			 ZipOutputStream zos = new ZipOutputStream(fos)) {
+		try(FileOutputStream fos = new FileOutputStream(zipFileName);
+			ZipOutputStream zos = new ZipOutputStream(fos)) {
 			boolean hasValidFiles = false;
 
 			// Process each file/directory to be zipped
@@ -394,7 +410,7 @@ class Terminal {
 						}
 					} else {
 						System.err.println("zip: " + fileName +
-							": Is a directory (skipping, use -r for recursive)");
+										   ": Is a directory (skipping, use -r for recursive)");
 					}
 				} else {
 					// Add single file
@@ -411,18 +427,21 @@ class Terminal {
 				// Delete empty zip file
 				new File(zipFileName).delete();
 			}
-
-		} catch (IOException e) {
+		}
+		catch (IOException e) {
 			System.err.println("zip: Error creating archive: " + e.getMessage());
-		} catch (SecurityException e) {
+		}
+		catch (SecurityException e) {
 			System.err.println("zip: Permission denied");
-		} catch (Exception e) {
+		}
+		catch (Exception e) {
 			System.err.println("zip: " + e.getMessage());
 		}
 	}
 
 
-	public void unzip(String[] args) {
+   public
+	void unzip(String[] args) {
 		if (args == null || args.length == 0) {
 			System.err.println("unzip: missing operands");
 			System.err.println("Usage: unzip <archive_name.zip> [-d destination_directory]");
@@ -430,7 +449,7 @@ class Terminal {
 		}
 
 		String zipFileName = args[0];
-		String extractPath = "."; // Default to current directory
+		String extractPath = ".";  // Default to current directory
 
 		// Check for -d flag and destination directory
 		if (args.length >= 3 && args[1].equals("-d")) {
@@ -473,8 +492,8 @@ class Terminal {
 			return;
 		}
 
-		try (FileInputStream fis = new FileInputStream(zipFile);
-			 ZipInputStream zis = new ZipInputStream(fis)) {
+		try(FileInputStream fis = new FileInputStream(zipFile);
+			ZipInputStream zis = new ZipInputStream(fis)) {
 			ZipEntry entry;
 			boolean hasExtracted = false;
 
@@ -497,8 +516,8 @@ class Terminal {
 					} else if (outputFile.exists()) {
 						System.out.println("Directory already exists: " + outputFile.getPath());
 					} else {
-						System.err.println(
-							"unzip: Failed to create directory: " + outputFile.getPath());
+						System.err.println("unzip: Failed to create directory: " +
+										   outputFile.getPath());
 					}
 				} else {
 					// Create parent directories if they don't exist
@@ -508,7 +527,7 @@ class Terminal {
 					}
 
 					// Extract file
-					try (FileOutputStream fos = new FileOutputStream(outputFile)) {
+					try(FileOutputStream fos = new FileOutputStream(outputFile)) {
 						byte[] buffer = new byte[1024];
 						int length;
 						while ((length = zis.read(buffer)) > 0) {
@@ -516,9 +535,10 @@ class Terminal {
 						}
 						System.out.println("Extracted: " + outputFile.getPath());
 						hasExtracted = true;
-					} catch (IOException e) {
-						System.err.println(
-							"unzip: Error extracting " + entryName + ": " + e.getMessage());
+					}
+					catch (IOException e) {
+						System.err.println("unzip: Error extracting " + entryName + ": " +
+										   e.getMessage());
 					}
 				}
 
@@ -527,23 +547,26 @@ class Terminal {
 
 			if (hasExtracted) {
 				System.out.println("Archive '" + zipFileName + "' extracted successfully to '" +
-					(extractPath.equals(".") ? "current dir" : extractPath) + "'");
+								   (extractPath.equals(".") ? "current dir" : extractPath) + "'");
 
 			} else {
 				System.out.println("unzip: No files extracted from " + zipFileName);
 			}
-
-		} catch (IOException e) {
+		}
+		catch (IOException e) {
 			System.err.println("unzip: Error reading archive: " + e.getMessage());
-		} catch (SecurityException e) {
+		}
+		catch (SecurityException e) {
 			System.err.println("unzip: Permission denied");
-		} catch (Exception e) {
+		}
+		catch (Exception e) {
 			System.err.println("unzip: " + e.getMessage());
 		}
 	}
 
 
-	public void touch(String[] args) {
+   public
+	void touch(String[] args) {
 		if (args == null || args.length == 0) {
 			System.out.println("touch: missing file operand");
 			return;
@@ -578,7 +601,8 @@ class Terminal {
 		}
 	}
 
-	public void rm(String[] args) {
+   public
+	void rm(String[] args) {
 		if (args == null || args.length == 0) {
 			System.out.println("rm: missing file operand");
 			return;
@@ -592,8 +616,8 @@ class Terminal {
 			}
 
 			if (!file.exists()) {
-				System.out.println(
-					"rm: cannot remove '" + fileName + "': No such file or directory");
+				System.out.println("rm: cannot remove '" + fileName +
+								   "': No such file or directory");
 			} else if (file.isDirectory()) {
 				System.out.println("rm: cannot remove '" + fileName + "': Is a directory");
 			} else if (file.delete()) {
@@ -604,7 +628,8 @@ class Terminal {
 		}
 	}
 
-	public void cp(String[] args) {
+   public
+	void cp(String[] args) {
 		if (args == null || args.length == 0) {
 			System.out.println("cp: missing file operand");
 			System.out.println(
@@ -620,7 +645,7 @@ class Terminal {
 				return;
 			}
 			// delegate to cp_r with just the two directory arguments
-			cp_r(new String[] {args[1], args[2]});
+			cp_r(new String[]{args[1], args[2]});
 			return;
 		}
 
@@ -660,21 +685,23 @@ class Terminal {
 			}
 		}
 
-		try (FileInputStream fis = new FileInputStream(source);
-			 FileOutputStream fos = new FileOutputStream(dest)) {
+		try(FileInputStream fis = new FileInputStream(source);
+			FileOutputStream fos = new FileOutputStream(dest)) {
 			byte[] buffer = new byte[8192];
 			int length;
 			while ((length = fis.read(buffer)) > 0) {
 				fos.write(buffer, 0, length);
 			}
 			System.out.println("Copied: " + source.getPath() + " → " + dest.getPath());
-		} catch (IOException e) {
+		}
+		catch (IOException e) {
 			System.err.println("cp: error copying: " + e.getMessage());
 		}
 	}
 
 
-	public void cp_r(String[] args) {
+   public
+	void cp_r(String[] args) {
 		if (args == null || args.length != 2) {
 			System.out.println("cp -r: incorrect number of arguments");
 			System.out.println("Usage: cp -r <source_directory> <destination_directory>");
@@ -721,8 +748,8 @@ class Terminal {
 		// Ensure destination (parent destDir) exists (create if needed)
 		if (!destDir.exists()) {
 			if (!destDir.mkdirs()) {
-				System.out.println(
-					"cp -r: cannot create destination directory '" + destDir.getPath() + "'");
+				System.out.println("cp -r: cannot create destination directory '" +
+								   destDir.getPath() + "'");
 				return;
 			}
 		}
@@ -730,8 +757,8 @@ class Terminal {
 		// Create the target directory where source will be copied
 		if (!targetDir.exists()) {
 			if (!targetDir.mkdirs()) {
-				System.out.println(
-					"cp -r: cannot create target directory '" + targetDir.getPath() + "'");
+				System.out.println("cp -r: cannot create target directory '" + targetDir.getPath() +
+								   "'");
 				return;
 			}
 		}
@@ -739,14 +766,15 @@ class Terminal {
 		// Copy recursively using the existing File-based helper
 		try {
 			copyDirectoryRecursive(sourceDir, targetDir);
-			System.out.println(
-				"Directory copied: " + sourceDir.getPath() + " → " + targetDir.getPath());
+			System.out.println("Directory copied: " + sourceDir.getPath() + " → " +
+							   targetDir.getPath());
 		} catch (Exception e) {
 			System.err.println("cp -r: error copying directory: " + e.getMessage());
 		}
 	}
 
-	private void copyDirectoryRecursive(File sourceDir, File destDir) {
+   private
+	void copyDirectoryRecursive(File sourceDir, File destDir) {
 		File[] files = sourceDir.listFiles();
 		if (files == null) return;
 
@@ -757,14 +785,15 @@ class Terminal {
 				destFile.mkdirs();
 				copyDirectoryRecursive(file, destFile);
 			} else {
-				try (FileInputStream fis = new FileInputStream(file);
-					 FileOutputStream fos = new FileOutputStream(destFile)) {
+				try(FileInputStream fis = new FileInputStream(file);
+					FileOutputStream fos = new FileOutputStream(destFile)) {
 					byte[] buffer = new byte[1024];
 					int length;
 					while ((length = fis.read(buffer)) > 0) {
 						fos.write(buffer, 0, length);
 					}
-				} catch (IOException e) {
+				}
+				catch (IOException e) {
 					System.err.println("cp -r: error copying file " + file.getPath());
 				}
 			}
@@ -772,12 +801,13 @@ class Terminal {
 	}
 
 
-	public void redirectOutput(String mainCommand, String[] args, String fileName, boolean append) {
+   public
+	void redirectOutput(String mainCommand, String[] args, String fileName, boolean append) {
 		// Use the correct File path relative to currentDirectory
 		File outputFile = new File(currentDirectory, fileName);
-		PrintStream originalOut = System.out; // Keep a reference to the console output
+		PrintStream originalOut = System.out;  // Keep a reference to the console output
 
-		try (PrintStream fileOut = new PrintStream(new FileOutputStream(outputFile, append))) {
+		try(PrintStream fileOut = new PrintStream(new FileOutputStream(outputFile, append))) {
 			// 1. Redirect System.out to the file
 			System.setOut(fileOut);
 
@@ -804,15 +834,17 @@ class Terminal {
 
 			// Optional: Print a confirmation message to the original console
 			originalOut.println("Output of '" + mainCommand + "' " +
-				(append ? "appended to" : "written to") + " '" + fileName + "'");
-
-		} catch (IOException e) {
+								(append ? "appended to" : "written to") + " '" + fileName + "'");
+		}
+		catch (IOException e) {
 			// Print error to the original console (originalOut)
-			originalOut.println(
-				"Redirection Error: Could not write to file " + fileName + ": " + e.getMessage());
-		} catch (SecurityException e) {
+			originalOut.println("Redirection Error: Could not write to file " + fileName + ": " +
+								e.getMessage());
+		}
+		catch (SecurityException e) {
 			originalOut.println("Redirection Error: Permission denied for " + fileName);
-		} finally {
+		}
+		finally {
 			// 3. IMPORTANT: Restore System.out to the console
 			System.setOut(originalOut);
 		}
@@ -820,7 +852,8 @@ class Terminal {
 
 
 	// This method will choose the suitable command method to be called
-	public void chooseCommandAction() {
+   public
+	void chooseCommandAction() {
 		if (parser != null) {
 			switch (parser.getCommandName().toLowerCase()) {
 				case "pwd":
@@ -909,7 +942,8 @@ class Terminal {
 public class Main {
 	static Parser parser = new Parser();
 
-	public static void main(String[] args) {
+   public
+	static void main(String[] args) {
 		Scanner scanner = new Scanner(System.in);
 		Terminal terminal = new Terminal(parser);
 
@@ -927,14 +961,66 @@ public class Main {
 				scanner.close();
 				return;
 			}
-			if (!parser.parse(input)) {
-				System.out.println("wrong command or bad parameters!!");
-				parser.commandName = "";
-				parser.args = new String[0];
-				continue;
+
+			// Check for output redirection (> or >>)
+			boolean hasRedirection = false;
+			boolean appendMode = false;
+			String mainCommand = input;
+			String fileName = "";
+
+			// Check for >> first (must come before > check)
+			if (input.contains(">>")) {
+				hasRedirection = true;
+				appendMode = true;
+				String[] parts = input.split(">>", 2);
+				if (parts.length == 2) {
+					mainCommand = parts[0].trim();
+					fileName = parts[1].trim();
+				} else {
+					System.out.println("Invalid redirection syntax");
+					continue;
+				}
+			} else if (input.contains(">")) {
+				hasRedirection = true;
+				appendMode = false;
+				String[] parts = input.split(">", 2);
+				if (parts.length == 2) {
+					mainCommand = parts[0].trim();
+					fileName = parts[1].trim();
+				} else {
+					System.out.println("Invalid redirection syntax");
+					continue;
+				}
 			}
 
-			terminal.chooseCommandAction();
+			if (hasRedirection) {
+				if (fileName.isEmpty()) {
+					System.out.println("Error: No output file specified");
+					continue;
+				}
+
+				// Parse the main command (before > or >>)
+				if (!parser.parse(mainCommand)) {
+					System.out.println("wrong command or bad parameters!!");
+					parser.commandName = "";
+					parser.args = new String[0];
+					continue;
+				}
+
+				// Execute with redirection
+				terminal.redirectOutput(parser.getCommandName(), parser.getArgs(), fileName,
+										appendMode);
+			} else {
+				// Normal command execution without redirection
+				if (!parser.parse(input)) {
+					System.out.println("wrong command or bad parameters!!");
+					parser.commandName = "";
+					parser.args = new String[0];
+					continue;
+				}
+
+				terminal.chooseCommandAction();
+			}
 		}
 	}
 }

@@ -241,19 +241,53 @@ unzip archive.zip -d extracted/
 
 ### Output Redirection
 
-⚠️ **Status:** Not currently implemented
+#### `>` (Write/Overwrite)
 
-The following redirection operators are planned but not active:
+Redirect command output to a file . If the file doesn't exist, it will be created. If the file exists, its original content will be replaced.
 
--   `>` - Redirect output to file (overwrite)
--   `>>` - Redirect output to file (append)
-
-**Planned usage:**
+be aware that it erase all content and then append to a file.
 
 ```bash
-ls > files.txt           # Save ls output to files.txt
-cat file.txt >> log.txt  # Append file.txt content to log.txt
+<command> > <filename>
 ```
+
+**Supported commands:** `ls`, `cat`, `wc`, `pwd`
+
+**Examples:**
+
+```bash
+ls > files.txt              # Save directory listing to files.txt
+cat document.txt > copy.txt # Copy file content to copy.txt
+wc report.txt > stats.txt   # Save word count statistics to stats.txt
+pwd > location.txt          # Save current directory path to location.txt
+```
+
+#### `>>` (Append)
+
+Like `>` but appends to the file if it exists instead of replacing its content.
+
+```bash
+<command> >> <filename>
+```
+
+**Supported commands:** `ls`, `cat`, `wc`, `pwd`
+
+**Examples:**
+
+```bash
+ls >> files.txt                 # Append directory listing to files.txt
+cat file1.txt >> combined.txt   # Append file1 content to combined.txt
+cat file2.txt >> combined.txt   # Append file2 content to combined.txt
+wc data.txt >> stats.txt        # Append word count to stats.txt
+```
+
+**Behavior:**
+
+-   Creates the file if it doesn't exist
+-   `>` replaces existing file content
+-   `>>` preserves existing content and appends new output
+-   Output is written relative to current working directory
+-   Confirmation message is displayed on console after successful redirection
 
 ---
 
@@ -269,7 +303,6 @@ cat file.txt >> log.txt  # Append file.txt content to log.txt
 
 ## 🐛 Known Issues
 
--   Output redirection (`>`, `>>`) is not yet implemented
 -   Some edge cases in path resolution may need handling
 
 ---
