@@ -917,18 +917,18 @@ class Terminal {
 
 				// Joo
 				case "rm":
-					rm(parser.getArgs());
-					break;
+				rm(parser.getArgs());
+				break;
 
-					// Zyad
-					// case ">":
-					// redirectOutput(parser.getArgs());
-					// break;
+				// Zyad
+				case ">":
+				 redirectOutput(parser.getArgs());
+				 break;
 
-					// Zyad
-					// case ">>":
-					// appendOutput(parser.getArgs());
-					// break;
+				// Zyad
+				 case ">>":
+				 appendOutput(parser.getArgs());
+				 break;
 
 
 				default:
