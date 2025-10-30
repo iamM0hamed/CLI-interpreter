@@ -921,14 +921,14 @@ class Terminal {
 				break;
 
 				// Zyad
-				case ">":
-				 redirectOutput(parser.getArgs());
-				 break;
+				//case ">":
+				 //redirectOutput(parser.getArgs());
+				 //break;
 
 				// Zyad
-				 case ">>":
-				 appendOutput(parser.getArgs());
-				 break;
+				// case ">>":
+				 //appendOutput(parser.getArgs());
+				 //break;
 
 
 				default:
