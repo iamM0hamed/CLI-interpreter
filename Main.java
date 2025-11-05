@@ -13,6 +13,7 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
 
+// Zyad Azzap created the base classes
 
 class Parser {
 	String commandName = "";
@@ -880,12 +881,12 @@ class Terminal {
 					rmdir(parser.getArgs());
 					break;
 
-				// AbuHamed
+				// Zyad
 				case "cat":
 					cat(parser.getArgs());
 					break;
 
-				// AbuHamed
+				// Zyad
 				case "wc":
 					wc(parser.getArgs()[0]);
 					break;
@@ -922,14 +923,9 @@ class Terminal {
 
 					// Zyad
 					// case ">":
-					// redirectOutput(parser.getArgs());
-					// break;
 
 					// Zyad
 					// case ">>":
-					// appendOutput(parser.getArgs());
-					// break;
-
 
 				default:
 					System.out.println("Invalid command: " + parser.getCommandName());
