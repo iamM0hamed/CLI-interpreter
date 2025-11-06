@@ -47,6 +47,11 @@ class Parser {
 				if (CommandList.COMMANDS.contains(cmd)) {
 					commandName = cmd;
 					if (parts.length == 2) {
+						// ** NOTE : .split() returns ARRAY **
+						// /s => means any white space 
+						// + => means any number of white spaces 
+						// / => escape sequence
+						// //s+ => means => once you get a white space(or more than one) , split the string to 2 parts
 						args = parts[1].trim().split("\\s+");
 					} else {
 						args = new String[0];
@@ -231,7 +236,7 @@ class Terminal {
    public
 	void cat(String[] args) {
 		if (args == null || args.length == 0) {
-			System.err.println("cat: call with 0 arguments");
+			System.err.println("cat: can not call with 0 arguments");
 		}
 
 		// one argument
@@ -882,11 +887,13 @@ class Terminal {
 					break;
 
 				// Zyad
+				// works only with absolute path
 				case "cat":
 					cat(parser.getArgs());
 					break;
 
 				// Zyad
+				// works only with absolute path
 				case "wc":
 					wc(parser.getArgs()[0]);
 					break;
@@ -922,12 +929,28 @@ class Terminal {
 					break;
 
 					// Zyad
-					// case ">":
-
-					// Zyad
-					// case ">>":
+					// case ">" , ">>":
 
 				default:
+					// boolean flag = false; 
+					// for (int i = 0; i < parser.getArgs().length; i++) {
+					// 	if (parser.getArgs()[i] == ">")
+					// 	{
+					// 		redirectOutput( parser.getCommandName(),parser.getArgs()  ,parser.getArgs()[i+1] , false);
+					// 		flag = true;
+					// 		break;
+					// 	}
+					// 	else if (parser.getArgs()[i] == ">>")
+					// 	{
+					// 		redirectOutput( parser.getCommandName(),parser.getArgs()  ,parser.getArgs()[i+1] , true);
+					// 		flag = true;
+					// 		break;
+					// 	}
+					// }
+					// if(!flag)
+					// {
+					// 	System.out.println("Invalid command: " + parser.getCommandName());
+					// }
 					System.out.println("Invalid command: " + parser.getCommandName());
 					break;
 			}
@@ -935,7 +958,7 @@ class Terminal {
 	}
 }
 
-public class Main {
+public class App {
 	static Parser parser = new Parser();
 
    public
@@ -945,11 +968,11 @@ public class Main {
 
 		while (true) {
 			File cwd = terminal.getCurrentDirectory();
-			System.out.println(cwd + ">");
+			System.out.print(cwd + ">");
 
 			String input = scanner.nextLine();
 			if (input.isEmpty()) {
-				System.out.println("Empty Command!!");
+				// System.out.println("Empty Command!!");
 				continue;
 			}
 			if (input.equalsIgnoreCase("EXIT")) {
